@@ -10,7 +10,7 @@
 # JumpThreadHijack :pushpin:
   - Shellcode Injection with ThreadHijacking without the usage of SetThreadContext
   - Refernce:
-    -[TheLostThread](https://github.com/0prrr/Malwear-Sweet/tree/main/TheLostThread)
+    - [TheLostThread](https://github.com/0prrr/Malwear-Sweet/tree/main/TheLostThread)
 ---
 # ModuleStomping :pushpin:
   - This is like the base program for everything and it all build upong this
