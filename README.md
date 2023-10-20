@@ -1,4 +1,4 @@
-# Rusty-Playground :toolbox:
+# Rusty-Playground :crab:
 > Some Rust program I wrote while learning Malware Development 
 
 # Gabimaru :pushpin:
