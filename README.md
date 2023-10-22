@@ -25,6 +25,11 @@
     - [ntcreateuserprocess_1](https://offensivedefence.co.uk/posts/ntcreateuserprocess/)
     - [ntcreateuserprocess_2](https://captmeelo.com/redteam/maldev/2022/05/10/ntcreateuserprocess.html)   
 ---
+# PatchlessAmsiBypass 📌
+  - Amsi Bypass with HWBP So no hooks in memory
+  - Reference:
+    - [patchless_amsi](https://gist.github.com/CCob/fe3b63d80890fafeca982f76c8a3efdf)
+---
 # StackEncrypt :pushpin:
   - Shuffele & encrpyt the Stack and sleep with indirect syscalls to NtDelayExecution
   - Refernce:
