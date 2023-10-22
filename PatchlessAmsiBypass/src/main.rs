@@ -282,7 +282,7 @@ fn get_input() -> std::io::Result<String> {
 #[allow(dead_code)]
 /// Used for debugging
 pub fn pause() {
-    println!("Scan the pocess with PE-SIEVE to see if the Any hooks on ;)"); // Message to the user
+    println!("Scan the process with PE-SIEVE to check for any hooks in memory.");; // Message to the user
     match get_input() {
         Ok(_) => {}, // Do nothing with the buffer
         Err(error) => println!("Error reading input: {}", error),
