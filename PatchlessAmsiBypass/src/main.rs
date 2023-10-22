@@ -1,3 +1,10 @@
+// Detection found. It is recommended to abort executing the content if it is executable, e.g. a script.
+// Return result of 1 - 32767 is estimated risk level that an antimalware provider might indicate.
+// The large the result, the riskier to continue.
+// Any return result equal to or larger than 32768 is consider malware and should be blocked.
+// These values are provider specific, and may indicate malware family or ID.
+// Resorce https://github.com/tpn/winsdk-10/blob/master/Include/10.0.10240.0/um/amsi.idl
+
 #![allow(non_snake_case,non_camel_case_types, dead_code, unused_imports)]
 #[link(name = "amsi")]
 extern {}
