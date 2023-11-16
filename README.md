@@ -30,6 +30,16 @@
   - Reference:
     - [patchless_amsi](https://gist.github.com/CCob/fe3b63d80890fafeca982f76c8a3efdf)
 ---
+# PatchlessBypass 📌
+  - Improved Version of the PatchlessAmsiBypass Patch ETW + AMSI on all threads
+  - Reference:
+    - [PatchlessHook](https://github.com/ScriptIdiot/sleepmask_PatchlessHook/)
+---
+# SelfErase 📌
+  - Delete a currently running file from disk
+  - Reference:
+    - [self_remove](https://github.com/Enelg52/OffensiveGo/tree/main/self_remove)
+---
 # StackEncrypt :pushpin:
   - Shuffele & encrpyt the Stack and sleep with indirect syscalls to NtDelayExecution
   - Refernce:
