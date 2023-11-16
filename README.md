@@ -39,6 +39,7 @@
   - Delete a currently running file from disk
   - Reference:
     - [self_remove](https://github.com/Enelg52/OffensiveGo/tree/main/self_remove)
+    - [delete-self-poc](https://github.com/LloydLabs/delete-self-poc)
 ---
 # StackEncrypt :pushpin:
   - Shuffele & encrpyt the Stack and sleep with indirect syscalls to NtDelayExecution
