@@ -1,0 +1,12 @@
+[package]
+name = "SelfErase"
+version = "0.1.6"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+memmap = "0.7"
+ntapi = "0.4.1"
+winapi = { version = "0.3.9", features = ["fileapi", "handleapi", "winbase", "winnt"] }
+
