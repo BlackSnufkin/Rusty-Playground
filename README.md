@@ -1,6 +1,11 @@
 # Rusty-Playground :crab:
 > Some Rust program I wrote while learning Malware Development 
 
+# ElevateToken :pushpin:
+  - Impersonates user tokens, and creates processes with elevated system privileges
+  - Refernce:
+    - [Token::elevate](https://github.com/gentilkiwi/mimikatz/blob/master/mimikatz/modules/kuhl_m_token.c)
+---
 # Gabimaru :pushpin:
   - Module Stomping with Threadless Injection x2 (1. load dll 2. Shellcode Injection )
   - Refernce:

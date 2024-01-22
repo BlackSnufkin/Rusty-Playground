@@ -1,0 +1,11 @@
+[package]
+name = "ElevateToken"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+winapi = { version = "0.3.9", features = ["winbase", "processthreadsapi", "errhandlingapi", "namedpipeapi", "securitybaseapi","handleapi","tlhelp32","winerror"] }
+
+anyhow = "1.0"
