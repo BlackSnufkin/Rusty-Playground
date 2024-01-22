@@ -380,7 +380,7 @@ pub fn pause() {
 fn main() {
     match setup_bypass() {
         Ok(_) => {
-            println!("Verification complete.");
+            println!("HWBP as been applied to all Treads");
             pause();
         },
         Err(err_msg) => {
