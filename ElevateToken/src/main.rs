@@ -142,7 +142,7 @@ fn create_process_with_system_privileges(token_handle: HANDLE, command: &str) ->
         let cmdline = to_wide_chars(&format!("cmd /C {}", command));
         if CreateProcessWithTokenW(
             token_handle,
-            0, // Logon flags, 0 for none,
+            0, 
             null_mut(),
             cmdline.as_ptr() as *mut _,
             CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
@@ -157,7 +157,7 @@ fn create_process_with_system_privileges(token_handle: HANDLE, command: &str) ->
             CloseHandle(write_pipe);
             return Err(format!("CreateProcessWithTokenW failed with error code {}", error).to_string());
         }
-        // Close unneeded handles
+        
         CloseHandle(write_pipe);
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
@@ -182,11 +182,11 @@ fn create_process_with_system_privileges(token_handle: HANDLE, command: &str) ->
         }
         CloseHandle(read_pipe);
 
-        // After reading from the pipe
+        
         output = String::from_utf8(buffer)
             .map_err(|e| format!("Failed to convert output to String: {}", e.to_string()))?;
 
-        // Get the PID of the newly created process
+        
         let pid = pi.dwProcessId;
 
         Ok((output, pid))
@@ -284,13 +284,13 @@ unsafe fn display_token_info(token_handle: HANDLE) {
         let mut sid_name_use = 0;
 
         if LookupAccountSidW(
-            null(), // System name - NULL for the local computer, correctly cast
-            token_user_ref.User.Sid, // SID to look up
-            username.as_mut_ptr(), // Buffer to receive the name of the account
-            &mut username_size, // Size of the username buffer
-            domain_name.as_mut_ptr(), // Buffer to receive the domain name
-            &mut domain_size, // Size of the domain name buffer
-            &mut sid_name_use, // Pointer to a variable to receive a SID_NAME_USE enumeration value
+            null(), 
+            token_user_ref.User.Sid, 
+            username.as_mut_ptr(), 
+            &mut username_size, 
+            domain_name.as_mut_ptr(), 
+            &mut domain_size, 
+            &mut sid_name_use, 
         ) != 0
         {
             let user = OsString::from_wide(&username[..username_size as usize]).to_string_lossy().into_owned();
@@ -307,7 +307,7 @@ unsafe fn display_token_info(token_handle: HANDLE) {
 fn main() {
 
 
-    // Retrieve the token handle of the current process
+    
     let process_token_handle = match get_current_process_token() {
         Ok(token) => token,
         Err(err) => {
@@ -316,13 +316,13 @@ fn main() {
         },
     };
 
-    // Display token information for the current process
+    
     unsafe {
         display_token_info(process_token_handle);
-        CloseHandle(process_token_handle);  // Ensure to close the handle after use
+        CloseHandle(process_token_handle);  
     }
 
-    // Attempt to get the current thread token
+    
     match get_current_thread_token() {
         Ok(thread_token_handle) => {
             unsafe {
@@ -332,7 +332,7 @@ fn main() {
         },
         Err(_err) => {
             eprintln!("[-] No ThreadToken was found");
-            // Continue execution even if getting thread token fails
+            
         },
     };
 
@@ -369,7 +369,7 @@ fn main() {
     println!("[+] Token assigned to the current thread.");
 
 
-    // Retrieve the token handle of the current process
+    
     let process_token_handle = match get_current_process_token() {
         Ok(token) => token,
         Err(err) => {
@@ -378,13 +378,13 @@ fn main() {
         },
     };
 
-    // Display token information for the current process
+    
     unsafe {
         display_token_info(process_token_handle);
-        CloseHandle(process_token_handle);  // Ensure to close the handle after use
+        CloseHandle(process_token_handle);  
     }
 
-    // Optionally, do the same for the current thread
+    
     let thread_token_handle = match get_current_thread_token() {
         Ok(token) => token,
         Err(_err) => {
@@ -393,23 +393,23 @@ fn main() {
         },
     };
 
-    // Display token information for the current thread
+    
     unsafe {
         display_token_info(thread_token_handle);
-        CloseHandle(thread_token_handle);  // Ensure to close the handle after use
+        CloseHandle(thread_token_handle);  
     }
 
 
-    // Define an Option to cache the output
+    
     let output_cache: Option<String> = None;
 
-    // Check if the output is already cached
+    
     if let Some(output) = &output_cache {
         println!("Output from cache: {}", output);
     } else {
         match create_process_with_system_privileges(token_handle, "whoami") {
             Ok((output, pid)) => {
-                 // Additional debug prints
+                 
                 println!("[+] Output received from the created process: {}", output);
                 println!("[+] PID of the created process: {}", pid);
             }
