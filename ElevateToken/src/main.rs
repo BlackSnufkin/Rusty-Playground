@@ -327,14 +327,12 @@ fn main() {
         },
     };
 
-
     let result = enable_privileges();
-    if !result.0 {
-        eprintln!("{}", result.1);
-        return;
+
+    match result {
+        Ok(_) => println!("Privileges enabled successfully."),
+        Err(e) => eprintln!("Error enabling privileges: {}", e),
     }
-
-
 
 
     let token_handle = match set_access_token() {
