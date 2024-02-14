@@ -29,66 +29,57 @@ use winapi::um::{
     winnt::{
         MAXIMUM_ALLOWED, PROCESS_QUERY_INFORMATION, SECURITY_IMPERSONATION_LEVEL, SecurityImpersonation, TOKEN_ADJUST_PRIVILEGES,
         TOKEN_ASSIGN_PRIMARY, TOKEN_DUPLICATE, TOKEN_IMPERSONATE, TOKEN_PRIVILEGES, TOKEN_QUERY, TOKEN_READ, TOKEN_USER, TokenUser, SE_PRIVILEGE_ENABLED,
-        HANDLE,
+        HANDLE, LUID,
     },
 };
 
 
 
-const SE_DEBUG_NAME: [WCHAR; 17] = [83u16 as WCHAR, 101, 68, 101, 98, 117, 103, 80, 114, 105, 118, 105, 108, 101, 103, 101, 0];
-const SE_IMPERSONATE_NAME: [WCHAR; 23] = [
-    83u16 as WCHAR, 101, 73, 109, 112, 101, 114, 115, 111, 110, 97, 116, 101, 80, 114, 105, 118, 105, 108, 101, 103, 101, 0
-];
-const SE_INCREASE_QUOTA_NAME: [WCHAR; 25] = [83u16 as WCHAR, 101, 73, 110, 99, 114, 101, 97, 115, 101, 81, 117, 111, 116, 97, 80, 114, 105, 118, 105, 108, 101, 103, 101, 0];
-const SE_ASSIGNPRIMARYTOKEN_NAME: [WCHAR; 30] = [
-    83u16 as WCHAR, 101, 65, 115, 115, 105, 103, 110, 80, 114, 105, 109, 97, 114, 121, 84, 111, 107, 101, 110, 80, 114, 105, 118, 105, 108, 101, 103, 101, 0
-];
 
 
-fn enable_privileges() -> (bool, String) {
+fn enable_privileges() -> Result<(), String> {
     unsafe {
         let mut token: HANDLE = null_mut();
         let mut privilege: TOKEN_PRIVILEGES = zeroed();
 
         if OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &mut token) == 0 {
-            return (false, format!("[x] OpenProcessToken Error: {}", Error::last_os_error()));
+            return Err(format!("OpenProcessToken Error: {}", GetLastError()));
         }
 
         let privileges_to_set = vec![
-            (SE_DEBUG_NAME.to_vec(), "SeDebugPrivilege"),
-            (SE_IMPERSONATE_NAME.to_vec(), "SeImpersonatePrivilege"),
-            (SE_INCREASE_QUOTA_NAME.to_vec(), "SeIncreaseQuotaPrivilege"),
-            (SE_ASSIGNPRIMARYTOKEN_NAME.to_vec(), "SeAssignPrimaryTokenPrivilege"),
+            "SeDebugPrivilege",
+            "SeImpersonatePrivilege",
+            "SeIncreaseQuotaPrivilege",
+            "SeAssignPrimaryTokenPrivilege",
         ];
 
-        for (privilege_name, privilege_desc) in privileges_to_set {
-            privilege.PrivilegeCount = 1;
-            privilege.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+        for privilege_desc in privileges_to_set {
+            let mut luid: LUID = zeroed();
+            let privilege_name_wide: Vec<u16> = OsStr::new(privilege_desc).encode_wide().chain(Some(0)).collect();
 
-            if LookupPrivilegeValueW(null_mut(), privilege_name.as_ptr(), &mut privilege.Privileges[0].Luid) == 0 {
-                return (false, format!("[x] Lookup {} Error: {}", privilege_desc, Error::last_os_error()));
-            } else {
-                println!("[+] Privilege {} lookup successful", privilege_desc);
+            if LookupPrivilegeValueW(null_mut(), privilege_name_wide.as_ptr(), &mut luid) == 0 {
+                CloseHandle(token);
+                return Err(format!("Lookup {} Error: {}", privilege_desc, GetLastError()));
             }
 
-            if AdjustTokenPrivileges(token, 0, &mut privilege, size_of_val(&privilege) as u32, null_mut(), null_mut()) == 0 {
+            privilege.PrivilegeCount = 1;
+            privilege.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+            privilege.Privileges[0].Luid = luid;
+
+            if AdjustTokenPrivileges(token, 0, &mut privilege, std::mem::size_of::<TOKEN_PRIVILEGES>() as u32, null_mut(), null_mut()) == 0 {
                 let last_error = GetLastError();
-                if last_error != ERROR_SUCCESS {
-                    return (false, format!("[x] AdjustTokenPrivileges ({}): {}", privilege_desc, last_error));
-                } else {
-                    println!("[+] Privilege {} enabled successfully", privilege_desc);
-                }
+                CloseHandle(token);
+                return Err(format!("AdjustTokenPrivileges ({}): {}", privilege_desc, last_error));
             }
         }
 
         if CloseHandle(token) == 0 {
-            return (false, format!("[x] CloseHandle Error: {}", Error::last_os_error()));
+            return Err(format!("CloseHandle Error: {}", GetLastError()));
         }
-
-        (true, "[+] Successfully enabled required privileges".to_string())
     }
-}
 
+    Ok(())
+}
 
 
 fn get_winlogon_pid() -> String {
