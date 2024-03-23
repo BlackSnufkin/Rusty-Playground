@@ -9,6 +9,11 @@
   - Refernce:
     - [Token::elevate](https://github.com/gentilkiwi/mimikatz/blob/master/mimikatz/modules/kuhl_m_token.c)
 ---
+# HeapEnc :pushpin:
+  - Simpale exmaple of heap encryption
+  - Refernce:
+    - [nimHeapEnc](https://github.com/nbaertsch/nimHeapEnc)
+---
 # IoDllProxyLoad :pushpin:
   - Using windows thread pool API to proxy the loading and unloading of a DLL through an I/O completion callback function utilizing named pipes
   - Refernce:
