@@ -65,7 +65,7 @@ struct UnloadContext {
     ldr_unload_dll: unsafe extern "system" fn(HANDLE) -> u32,
 }
 
-// Function to be called by the threadpool work item for unloading the DLL
+
 extern "system" fn unload_dll_callback(
     _instance: PTP_CALLBACK_INSTANCE,
     context: PVOID,
@@ -87,7 +87,7 @@ extern "system" fn unload_dll_callback(
 }
 
 
-// Unsafe wrapper
+
 struct UnsafeHandle(HANDLE);
 
 unsafe impl Send for UnsafeHandle {}
@@ -109,23 +109,23 @@ extern "system" fn io_completion_callback(
     _io: *mut TP_IO,
 ) {
     let load_context = unsafe { &*(context as *const LoadContext) };
-    // Convert the CString to a wide string (UTF-16) and collect into a Vec<u16>
+    
     let mut dll_name_wide: Vec<u16> = load_context.dll_name.to_str().unwrap().encode_utf16().collect();
-    dll_name_wide.push(0); // Manually append null terminator
+    dll_name_wide.push(0); 
 
     let mut unicode_string = UNICODE_STRING {
-        Length: ((dll_name_wide.len() - 1) * std::mem::size_of::<u16>()) as u16, // Length in bytes, excluding the null terminator
-        MaximumLength: (dll_name_wide.len() * std::mem::size_of::<u16>()) as u16, // Maximum length in bytes, including the null terminator
+        Length: ((dll_name_wide.len() - 1) * std::mem::size_of::<u16>()) as u16, 
+        MaximumLength: (dll_name_wide.len() * std::mem::size_of::<u16>()) as u16, 
         Buffer: dll_name_wide.as_ptr() as *mut _,
     };
     let mut module_handle: HANDLE = null_mut();
 
     let status = unsafe {
         (load_context.ldr_load_dll)(
-            null_mut(), // Reserved, must be NULL
-            0, // Flags, must be 0
-            &mut unicode_string, // Module file name as UNICODE_STRING
-            &mut module_handle // Receives the module handle
+            null_mut(), 
+            0, 
+            &mut unicode_string, 
+            &mut module_handle 
         )
     };
 
@@ -194,10 +194,10 @@ extern "system" fn io_completion_callback_wrapper(
     number_of_bytes_transferred: usize,
     io: *mut TP_IO,
 ) {
-    // Cast `overlapped` back to the expected type for `io_completion_callback`
+    
     let overlapped_casted = overlapped as *mut OVERLAPPED;
 
-    // Call the original callback with the correct argument types
+    
     io_completion_callback(
         instance,
         context,
@@ -215,7 +215,7 @@ fn start_read(pipe: *mut c_void  , tp_io: PTP_IO, overlapped: &mut OVERLAPPED, b
         StartThreadpoolIo(tp_io);
         if ReadFile(
             pipe as *mut c_void ,
-            buffer.as_mut_ptr() as *mut c_void, // Corrected c_void usage
+            buffer.as_mut_ptr() as *mut c_void, 
             buffer.len() as u32,
             &mut bytes_read,
             overlapped,
@@ -432,4 +432,3 @@ fn main() {
 
     println!("DLL should be unloaded! Input any key to exit...");    wait_for_user_input();
 }
-
