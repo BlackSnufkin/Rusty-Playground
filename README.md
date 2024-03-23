@@ -10,7 +10,7 @@
     - [Token::elevate](https://github.com/gentilkiwi/mimikatz/blob/master/mimikatz/modules/kuhl_m_token.c)
 ---
 # HeapEnc :pushpin:
-  - Simpale exmaple of heap encryption
+  - Simple exmaple of heap encryption
   - Refernce:
     - [nimHeapEnc](https://github.com/nbaertsch/nimHeapEnc)
 ---
