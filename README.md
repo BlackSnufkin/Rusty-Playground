@@ -14,6 +14,9 @@
   - Refernce:
     - [nimHeapEnc](https://github.com/nbaertsch/nimHeapEnc)
 ---
+# HookFinder :pushpin:
+  - Rust code that attempts to detect userland API hooks in place by AV/EDR
+---
 # IoDllProxyLoad :pushpin:
   - Using windows thread pool API to proxy the loading and unloading of a DLL through an I/O completion callback function utilizing named pipes
   - Refernce:
@@ -42,6 +45,11 @@
     - [self_remove](https://github.com/Enelg52/OffensiveGo/tree/main/self_remove)
     - [delete-self-poc](https://github.com/LloydLabs/delete-self-poc)
 ---
+# SilentFart :pushpin:
+  - Leveraging NTAPI to grab NTDLL for unhooking without triggering "PspCreateProcessNotifyRoutine"
+  - Refernce:
+    - [GhostFart](https://github.com/mansk1es/GhostFart)
+---
 # StackEncrypt :pushpin:
   - Shuffele & encrpyt the Stack and sleep with indirect syscalls to NtDelayExecution
   - Refernce:
@@ -53,8 +61,16 @@
   - Refernce:
     - [arsenal-rs](https://github.com/memN0ps/arsenal-rs)
 ---
+# USB_mon :pushpin:
+  - USB monitoring for new devices and display info about the devices
+---
 # VEH-ProxyDll :pushpin:
   - leverage the VEH (Vectored Exception Handler) to modify the context, especially RIP register to take us to the LoadLibraryA, and the RCX to hold the function's argument (module name) of LoadLibraryA. 
   - To trigger our exception, VirtualProtect is used to set the page to PAGE_GUARD, thus triggering the STATUS_GUARD_PAGE_VIOLATIO
   - Refernce:
     - [VEH-DLL-proxy-load.c](https://github.com/kleiton0x00/Proxy-DLL-Loads/blob/main/VEH-DLL-proxy-load.c)
+---
+# Whoami_alt :pushpin:
+  - Alternatives to the command whoami by lavregin uncommon winapi (this is not presnt on [WhoIsWho](https://github.com/MzHmO/WhoIsWho) and on [WhoamiAlternatives](https://twitter.com/vxunderground/status/1720265558501794288))
+
+
