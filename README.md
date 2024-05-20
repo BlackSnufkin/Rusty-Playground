@@ -71,6 +71,6 @@
     - [VEH-DLL-proxy-load.c](https://github.com/kleiton0x00/Proxy-DLL-Loads/blob/main/VEH-DLL-proxy-load.c)
 ---
 # Whoami_alt :pushpin:
-  - Alternatives to the command whoami by lavregin uncommon winapi (this is not presnt on [WhoIsWho](https://github.com/MzHmO/WhoIsWho) and on [WhoamiAlternatives](https://twitter.com/vxunderground/status/1720265558501794288))
+  - Alternatives to the command whoami by using uncommon winapi (this is not presnt on [WhoIsWho](https://github.com/MzHmO/WhoIsWho) and on [WhoamiAlternatives](https://twitter.com/vxunderground/status/1720265558501794288))
 
 
