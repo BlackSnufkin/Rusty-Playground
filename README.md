@@ -6,6 +6,8 @@
 ---
 # DefExclusions :pushpin:
   - Simpale Program to enum Defender Exclusions from normal user (no admin)
+  - Reference:
+    - [Source](https://twitter.com/VakninHai/status/1796628601535652289)
 ---
 # ElevateToken :pushpin:
   - Impersonates user tokens, and creates processes with elevated system privileges
