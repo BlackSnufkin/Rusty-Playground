@@ -4,6 +4,9 @@
 # ClipboradMon :pushpin:
   - Simpale Program to monitor clipborad for changes and log them or copy the file depenads on the situastion
 ---
+# DefExclusions :pushpin:
+  - Simpale Program to enum Defender Exclusions from normal user (no admin)
+---
 # ElevateToken :pushpin:
   - Impersonates user tokens, and creates processes with elevated system privileges
   - Refernce:
@@ -13,6 +16,9 @@
   - Simple exmaple of heap encryption
   - Refernce:
     - [nimHeapEnc](https://github.com/nbaertsch/nimHeapEnc)
+---
+# HideDll :pushpin:
+  - Simpale Program that will Hide the dll in the current process + anti-analysis method so the dll cant be dumped with memory scanner (test against pe-sieve)
 ---
 # HookFinder :pushpin:
   - Rust code that attempts to detect userland API hooks in place by AV/EDR
