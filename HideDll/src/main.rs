@@ -176,22 +176,6 @@ impl ModuleRenamer {
 }
 
 
-fn run() -> Result<(), String> {
-    unsafe {
-        // Load the DLL from the UNC path into the current process without initializing it
-        let dll_name = ModuleRenamer::to_wide_string(r"C:\Users\L.Ackerman\Desktop\meow.dll");
-        let hDll = LoadLibraryW(dll_name.as_ptr());
-
-        if hDll.is_null() {
-            return Err(format!("Failed to load DLL. Error: {}", GetLastError()));
-        }
-        ModuleRenamer::change_module_name("meow.dll", "\\\\localhost\\C$\\Windows\\System32\\ntdll.dll")?;
-        
-    }
-
-    Ok(())
-}
-
 #[macro_export]
 macro_rules! offset_of {
     ($ty:ty, $field:ident) => {{
@@ -201,14 +185,41 @@ macro_rules! offset_of {
     }};
 }
 
+
+
+fn run(dll_path: &str, original_name: &str) -> Result<(), String> {
+    unsafe {
+        // Load the DLL from the provided path into the current process without initializing it
+        let dll_name = ModuleRenamer::to_wide_string(dll_path);
+        let hDll = LoadLibraryW(dll_name.as_ptr());
+
+        if hDll.is_null() {
+            return Err(format!("Failed to load DLL. Error: {}", GetLastError()));
+        }
+        ModuleRenamer::change_module_name(original_name, "\\\\localhost\\C$\\Windows\\System32\\ntdll.dll")?;
+    }
+
+    Ok(())
+}
+
 fn main() -> Result<(), String> {
-    if let Err(e) = run() {
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() != 3 {
+        eprintln!("Usage: {} <DLL Path> <Original Name>", args[0]);
+        return Err("Invalid number of arguments".to_string());
+    }
+
+    let dll_path = &args[1];
+    let original_name = &args[2];
+
+
+    if let Err(e) = run(dll_path, original_name) {
         eprintln!("Error: {}", e);
     }
 
     // Mimic system("pause") using stdin
     print!("Press Enter to continue...");
-    io::stdout().flush().map_err(|e| e.to_string())?;
-    let _ = io::stdin().read_line(&mut String::new()).map_err(|e| e.to_string())?;
+    std::io::stdout().flush().map_err(|e| e.to_string())?;
+    let _ = std::io::stdin().read_line(&mut String::new()).map_err(|e| e.to_string())?;
     Ok(())
 }
