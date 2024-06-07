@@ -4,7 +4,7 @@
 # ClipboradMon :pushpin:
   - Simpale Program to monitor clipborad for changes and log them or copy the file depenads on the situastion
 ---
-# DefenderWeaknes :pushpin:
+# DefenderWeakness :pushpin:
 - Program to Enumerate Defender Weaknesses: This tool identifies exclusion paths allowed threats and ASR enabled rules on the system from a normal user (no admin privileges required).
   - Reference:
     - [Source](https://twitter.com/VakninHai/status/1796628601535652289)
