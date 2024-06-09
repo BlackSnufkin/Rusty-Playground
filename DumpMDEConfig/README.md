@@ -4,7 +4,7 @@
 This tool enumerates Microsoft Defender, it identifying exclusion paths, allowed threats, protection history and ASR (Attack Surface Reduction) rules enabled on the system. No admin privileges required.
 
 ## Usage
-Run the executable to list the weaknesses.
+Run the executable to list the Microsoft Defender Configuration.
 
 ## Example
 ```txt
