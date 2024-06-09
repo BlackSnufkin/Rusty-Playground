@@ -1,4 +1,4 @@
-# DumpMDEConfig :shiled:
+# DumpMDEConfig :shield:
 
 ## Description
 This tool enumerates Microsoft Defender, it identifying exclusion paths, allowed threats, protection history and ASR (Attack Surface Reduction) rules enabled on the system. No admin privileges required.
