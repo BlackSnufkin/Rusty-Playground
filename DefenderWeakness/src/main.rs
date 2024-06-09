@@ -21,9 +21,11 @@ fn main() {
         eprintln!("Error querying ASR rules: {}", e);
         let _ = query_asr_rules();
     }
-    println!("The following threats are allowed on the system:");
+    println!("[+] Allowed Threats of the system:");
+    let _ = query_allowed_threats();
 
-    let _ = query_malware_detection_events();
+    println!("[+] Defender Protection History:");
+    let _ = query_protection_history();
 
 
 }
@@ -188,7 +190,7 @@ fn query_reg_asr_rules() -> Result<(), Box<dyn Error>> {
 
 
 
-fn query_malware_detection_events() -> Result<(), Box<dyn Error>> {
+fn query_allowed_threats() -> Result<(), Box<dyn Error>> {
     let log_name_w: Vec<u16> = OsString::from("Microsoft-Windows-Windows Defender/Operational")
         .encode_wide()
         .chain(Some(0))
@@ -208,11 +210,11 @@ fn query_malware_detection_events() -> Result<(), Box<dyn Error>> {
         let mut events: [EVT_HANDLE; 10] = [std::ptr::null_mut(); 10];
         let mut returned = 0;
 
-        // Create a new table
+        
         let mut table = Table::new();
         table.add_row(row!["ThreatID", "Tool Name", "Path", "Time Created"]);
 
-        // Store ThreatID to event details mapping
+        
         let mut threat_details: HashMap<String, (String, String)> = HashMap::new();
 
         while EvtNext(h_query, events.len() as u32, events.as_mut_ptr(), 0, 0, &mut returned) != 0 {
@@ -259,7 +261,7 @@ fn query_malware_detection_events() -> Result<(), Box<dyn Error>> {
                                             eprintln!("Failed to find time created in the event message");
                                         }
 
-                                        // Add a row to the table
+                                        
                                         table.add_row(Row::new(vec![
                                             Cell::new(threat_id),
                                             Cell::new(tool_name),
@@ -279,10 +281,119 @@ fn query_malware_detection_events() -> Result<(), Box<dyn Error>> {
 
         EvtClose(h_query);
 
-        // Print the table
+        
         table.printstd();
     }
     println!();
+    Ok(())
+}
+
+
+fn query_protection_history() -> Result<(), Box<dyn Error>> {
+    let log_name_w: Vec<u16> = OsString::from("Microsoft-Windows-Windows Defender/Operational")
+        .encode_wide()
+        .chain(Some(0))
+        .collect();
+    let query_w: Vec<u16> = OsString::from("*[System[(EventID=1117 or EventID=1116)]]")
+        .encode_wide()
+        .chain(Some(0))
+        .collect();
+
+    unsafe {
+        let h_query = EvtQuery(std::ptr::null_mut(), log_name_w.as_ptr(), query_w.as_ptr(), EvtQueryChannelPath);
+        if h_query.is_null() {
+            eprintln!("Failed to query event log");
+            return Err(std::io::Error::last_os_error().into());
+        }
+
+        let mut events: [EVT_HANDLE; 10] = [std::ptr::null_mut(); 10];
+        let mut returned = 0;
+
+        
+        let mut table = Table::new();
+        table.add_row(row!["Threat Name", "Severity", "Category", "Path", "Action Taken", "Time Created"]);
+
+        while EvtNext(h_query, events.len() as u32, events.as_mut_ptr(), 0, 0, &mut returned) != 0 {
+            for &event in &events[..returned as usize] {
+                if event.is_null() {
+                    continue;
+                }
+
+                let mut buffer_size: u32 = 0;
+                EvtRender(std::ptr::null_mut(), event, EvtRenderEventXml, 0, std::ptr::null_mut(), &mut buffer_size, std::ptr::null_mut());
+                let mut buffer: Vec<u16> = vec![0; (buffer_size / 2) as usize];
+
+                if EvtRender(std::ptr::null_mut(), event, EvtRenderEventXml, buffer_size, buffer.as_mut_ptr() as *mut _, &mut buffer_size, std::ptr::null_mut()) == 0 {
+                    eprintln!("Failed to render event");
+                    EvtClose(event);
+                    continue;
+                }
+
+                let message_str = OsString::from_wide(&buffer).to_string_lossy().into_owned();
+                let mut threat_name = String::new();
+                let mut severity_name = String::new();
+                let mut category_name = String::new();
+                let mut path = String::new();
+                let mut action_name = String::new();
+                let mut time_created = String::new();
+
+                if let Some(event_id_str) = message_str.split("<EventID>").nth(1).and_then(|s| s.split("</EventID>").next()) {
+                    let event_id: u32 = event_id_str.parse().unwrap_or(0);
+
+                    if event_id == 1116 || event_id == 1117 {
+                        if let Some(value) = message_str.split("<Data Name='Threat Name'>").nth(1).and_then(|s| s.split("</Data>").next()) {
+                            threat_name = value.to_string();
+                        }
+
+                        if let Some(value) = message_str.split("<Data Name='Severity Name'>").nth(1).and_then(|s| s.split("</Data>").next()) {
+                            severity_name = value.to_string();
+                        }
+
+                        if let Some(value) = message_str.split("<Data Name='Category Name'>").nth(1).and_then(|s| s.split("</Data>").next()) {
+                            category_name = value.to_string();
+                        }
+
+                        if let Some(value) = message_str.split("<Data Name='Path'>").nth(1).and_then(|s| s.split("</Data>").next()) {
+                            path = value.to_string();
+                        }
+
+                        if let Some(value) = message_str.split("<Data Name='Action Name'>").nth(1).and_then(|s| s.split("</Data>").next()) {
+                            action_name = value.to_string();
+                        }
+                    }
+
+                    if let Some(value) = message_str.split("<TimeCreated SystemTime='").nth(1).and_then(|s| s.split("'").nth(0)) {
+                        if let Ok(parsed_time) = DateTime::parse_from_rfc3339(value) {
+                            let time_created_utc: DateTime<Utc> = parsed_time.with_timezone(&Utc);
+                            time_created = time_created_utc.to_string();
+                        } else {
+                            eprintln!("Failed to parse time created: {}", value);
+                        }
+                    } else {
+                        eprintln!("Failed to find time created in the event message");
+                    }
+
+                    
+                    table.add_row(Row::new(vec![
+                        Cell::new(&threat_name),
+                        Cell::new(&severity_name),
+                        Cell::new(&category_name),
+                        Cell::new(&path),
+                        Cell::new(&action_name),
+                        Cell::new(&time_created),
+                    ]));
+                }
+
+                EvtClose(event);
+            }
+        }
+
+        EvtClose(h_query);
+
+        
+        table.printstd();
+    }
+
     Ok(())
 }
 
@@ -296,7 +407,6 @@ struct MsftMpPreference {
     attack_surface_reduction_rules_ids: Option<Variant>,
 }
 
-// Mocked funcs object for demonstration purposes
 mod funcs {
 
 
@@ -310,7 +420,7 @@ mod funcs {
     }
 }
 
-// Function to convert Variant to Vec<u8>
+
 fn variant_to_vec_u8(var: &Variant) -> Result<Vec<u8>, Box<dyn Error>> {
     if let Variant::Array(arr) = var {
         let mut vec = Vec::new();
@@ -327,7 +437,7 @@ fn variant_to_vec_u8(var: &Variant) -> Result<Vec<u8>, Box<dyn Error>> {
     }
 }
 
-// Function to convert Variant to Vec<String>
+
 fn variant_to_vec_string(var: &Variant) -> Result<Vec<String>, Box<dyn Error>> {
     if let Variant::Array(arr) = var {
         let mut vec = Vec::new();
@@ -345,16 +455,16 @@ fn variant_to_vec_string(var: &Variant) -> Result<Vec<String>, Box<dyn Error>> {
 }
 
 fn query_asr_rules() -> Result<(), Box<dyn Error>> {
-    // Initialize COM library
+    
     let hr = unsafe { CoInitializeEx(ptr::null_mut(), COINIT_MULTITHREADED) };
     if hr != S_OK {
         return Err(Box::from(format!("Failed to initialize COM library: HRESULT 0x{:X}", hr)));
     }
 
     let com_con = COMLibrary::new()?;
-    // Initialize the COM library
+    
 
-    // Create a WMI connection with the specified namespace path
+    
     let wmi_con = WMIConnection::with_namespace_path("ROOT\\Microsoft\\Windows\\Defender", com_con)?;
 
     let results: Vec<MsftMpPreference> = wmi_con.raw_query("SELECT * FROM MsftMpPreference")?;
@@ -391,7 +501,7 @@ fn query_asr_rules() -> Result<(), Box<dyn Error>> {
     
     funcs::printtable(asr_data);
     
-    // Uninitialize COM library
+    
     unsafe { CoUninitialize() };
 
     Ok(())
