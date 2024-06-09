@@ -18,4 +18,3 @@ regex = "*"
 wmi = "0.13.3"
 serde = { version = "1", features = ["derive"] }
 chrono = "*"
-prettytable = "0.10"

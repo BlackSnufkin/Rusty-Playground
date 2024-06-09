@@ -12,8 +12,7 @@ use winapi::um::winevt::{EVT_HANDLE, EvtClose, EvtNext, EvtQuery, EvtQueryChanne
 use wmi::{COMLibrary, WMIConnection, Variant};
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
-use prettytable::{Table, Row, Cell};
-use prettytable::row;
+
 
 fn main() {
     query_exclusion_paths();
@@ -211,11 +210,6 @@ fn query_allowed_threats() -> Result<(), Box<dyn Error>> {
         let mut events: [EVT_HANDLE; 10] = [std::ptr::null_mut(); 10];
         let mut returned = 0;
 
-        
-        let mut table = Table::new();
-        table.add_row(row!["ThreatID", "Tool Name", "Path", "Time Created"]);
-
-        
         let mut threat_details: HashMap<String, (String, String)> = HashMap::new();
 
         while EvtNext(h_query, events.len() as u32, events.as_mut_ptr(), 0, 0, &mut returned) != 0 {
@@ -262,13 +256,11 @@ fn query_allowed_threats() -> Result<(), Box<dyn Error>> {
                                             eprintln!("Failed to find time created in the event message");
                                         }
 
-                                        
-                                        table.add_row(Row::new(vec![
-                                            Cell::new(threat_id),
-                                            Cell::new(tool_name),
-                                            Cell::new(path),
-                                            Cell::new(&time_created),
-                                        ]));
+                                        println!("ThreatID: {}", threat_id);
+                                        println!("Tool Name: {}", tool_name);
+                                        println!("Path: {}", path);
+                                        println!("Time Created: {}", time_created);
+                                        println!();
                                     }
                                 }
                             }
@@ -281,13 +273,10 @@ fn query_allowed_threats() -> Result<(), Box<dyn Error>> {
         }
 
         EvtClose(h_query);
-
-        
-        table.printstd();
     }
-    println!();
     Ok(())
 }
+
 
 
 fn query_protection_history() -> Result<(), Box<dyn Error>> {
@@ -309,10 +298,6 @@ fn query_protection_history() -> Result<(), Box<dyn Error>> {
 
         let mut events: [EVT_HANDLE; 10] = [std::ptr::null_mut(); 10];
         let mut returned = 0;
-
-        
-        let mut table = Table::new();
-        table.add_row(row!["Threat Name", "Severity", "Category", "Path", "Action Taken", "Time Created"]);
 
         while EvtNext(h_query, events.len() as u32, events.as_mut_ptr(), 0, 0, &mut returned) != 0 {
             for &event in &events[..returned as usize] {
@@ -374,15 +359,13 @@ fn query_protection_history() -> Result<(), Box<dyn Error>> {
                         eprintln!("Failed to find time created in the event message");
                     }
 
-                    
-                    table.add_row(Row::new(vec![
-                        Cell::new(&threat_name),
-                        Cell::new(&severity_name),
-                        Cell::new(&category_name),
-                        Cell::new(&path),
-                        Cell::new(&action_name),
-                        Cell::new(&time_created),
-                    ]));
+                    println!("Threat Name: {}", threat_name);
+                    println!("Severity: {}", severity_name);
+                    println!("Category: {}", category_name);
+                    println!("Path: {}", path);
+                    println!("Action Taken: {}", action_name);
+                    println!("Time Created: {}", time_created);
+                    println!();
                 }
 
                 EvtClose(event);
@@ -390,13 +373,10 @@ fn query_protection_history() -> Result<(), Box<dyn Error>> {
         }
 
         EvtClose(h_query);
-
-        
-        table.printstd();
     }
-    println!();
     Ok(())
 }
+
 
 
 fn query_exploit_guard_protection_history() -> Result<(), Box<dyn Error>> {
@@ -420,18 +400,6 @@ fn query_exploit_guard_protection_history() -> Result<(), Box<dyn Error>> {
 
         let mut events: [EVT_HANDLE; 10] = [std::ptr::null_mut(); 10];
         let mut returned = 0;
-
-        // Create a new table
-        let mut table = Table::new();
-        table.add_row(row![
-            "Rule ID",
-            "Description",
-            "Detection Time",
-            "User",
-            "Path",
-            "Process Name",
-            "Target Commandline"
-        ]);
 
         while EvtNext(h_query, events.len() as u32, events.as_mut_ptr(), 0, 0, &mut returned) != 0 {
             for &event in &events[..returned as usize] {
@@ -488,29 +456,25 @@ fn query_exploit_guard_protection_history() -> Result<(), Box<dyn Error>> {
                     target_commandline = value.to_string();
                 }
 
-                // Add a row to the table
-                table.add_row(Row::new(vec![
-                    Cell::new(&rule_id),
-                    Cell::new(&description),
-                    Cell::new(&detection_time),
-                    Cell::new(&user),
-                    Cell::new(&path),
-                    Cell::new(&process_name),
-                    Cell::new(&target_commandline),
-                ]));
+                println!("Rule ID: {}", rule_id);
+                println!("Description: {}", description);
+                println!("Detection Time: {}", detection_time);
+                println!("User: {}", user);
+                println!("Path: {}", path);
+                println!("Process Name: {}", process_name);
+                println!("Target Commandline: {}", target_commandline);
+                println!();
 
                 EvtClose(event);
             }
         }
 
         EvtClose(h_query);
-
-        // Print the table
-        table.printstd();
     }
 
     Ok(())
 }
+
 
 
 #[derive(Deserialize, Debug)]
