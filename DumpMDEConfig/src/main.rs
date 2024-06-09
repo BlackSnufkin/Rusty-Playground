@@ -24,10 +24,11 @@ fn main() {
     println!("[+] Allowed Threats of the system:");
     let _ = query_allowed_threats();
 
-    println!("[+] Defender Protection History:");
+    println!("[+] Defender Protection History");
     let _ = query_protection_history();
 
-
+    println!("[+] Exploit Guard Protection History");
+    let _ = query_exploit_guard_protection_history();
 }
 
 pub fn asr_rule_descriptions() -> HashMap<String, String> {
@@ -393,12 +394,123 @@ fn query_protection_history() -> Result<(), Box<dyn Error>> {
         
         table.printstd();
     }
-
+    println!();
     Ok(())
 }
 
 
+fn query_exploit_guard_protection_history() -> Result<(), Box<dyn Error>> {
+    let log_name_w: Vec<u16> = OsString::from("Microsoft-Windows-Windows Defender/Operational")
+        .encode_wide()
+        .chain(Some(0))
+        .collect();
+    let query_w: Vec<u16> = OsString::from("*[System[(EventID=1121)]]")
+        .encode_wide()
+        .chain(Some(0))
+        .collect();
 
+    let asr_descriptions = asr_rule_descriptions();
+
+    unsafe {
+        let h_query = EvtQuery(std::ptr::null_mut(), log_name_w.as_ptr(), query_w.as_ptr(), EvtQueryChannelPath);
+        if h_query.is_null() {
+            eprintln!("Failed to query event log");
+            return Err(std::io::Error::last_os_error().into());
+        }
+
+        let mut events: [EVT_HANDLE; 10] = [std::ptr::null_mut(); 10];
+        let mut returned = 0;
+
+        // Create a new table
+        let mut table = Table::new();
+        table.add_row(row![
+            "Rule ID",
+            "Description",
+            "Detection Time",
+            "User",
+            "Path",
+            "Process Name",
+            "Target Commandline"
+        ]);
+
+        while EvtNext(h_query, events.len() as u32, events.as_mut_ptr(), 0, 0, &mut returned) != 0 {
+            for &event in &events[..returned as usize] {
+                if event.is_null() {
+                    continue;
+                }
+
+                let mut buffer_size: u32 = 0;
+                EvtRender(std::ptr::null_mut(), event, EvtRenderEventXml, 0, std::ptr::null_mut(), &mut buffer_size, std::ptr::null_mut());
+                let mut buffer: Vec<u16> = vec![0; (buffer_size / 2) as usize];
+
+                if EvtRender(std::ptr::null_mut(), event, EvtRenderEventXml, buffer_size, buffer.as_mut_ptr() as *mut _, &mut buffer_size, std::ptr::null_mut()) == 0 {
+                    eprintln!("Failed to render event");
+                    EvtClose(event);
+                    continue;
+                }
+
+                let message_str = OsString::from_wide(&buffer).to_string_lossy().into_owned();
+                let mut rule_id = String::new();
+                let mut detection_time = String::new();
+                let mut user = String::new();
+                let mut path = String::new();
+                let mut process_name = String::new();
+                let mut target_commandline = String::new();
+                let mut description = String::new();
+
+                if let Some(value) = message_str.split("<Data Name='ID'>").nth(1).and_then(|s| s.split("</Data>").next()) {
+                    rule_id = value.to_lowercase();
+                    description = asr_descriptions.get(&rule_id).cloned().unwrap_or_else(|| "Unknown ASR Rule".to_string());
+                }
+
+                if let Some(value) = message_str.split("<Data Name='Detection Time'>").nth(1).and_then(|s| s.split("</Data>").next()) {
+                    if let Ok(parsed_time) = DateTime::parse_from_rfc3339(value) {
+                        let time_created_utc: DateTime<Utc> = parsed_time.with_timezone(&Utc);
+                        detection_time = time_created_utc.to_string();
+                    } else {
+                        eprintln!("Failed to parse detection time: {}", value);
+                    }
+                }
+
+                if let Some(value) = message_str.split("<Data Name='User'>").nth(1).and_then(|s| s.split("</Data>").next()) {
+                    user = value.to_string();
+                }
+
+                if let Some(value) = message_str.split("<Data Name='Path'>").nth(1).and_then(|s| s.split("</Data>").next()) {
+                    path = value.to_string();
+                }
+
+                if let Some(value) = message_str.split("<Data Name='Process Name'>").nth(1).and_then(|s| s.split("</Data>").next()) {
+                    process_name = value.to_string();
+                }
+
+                if let Some(value) = message_str.split("<Data Name='Target Commandline'>").nth(1).and_then(|s| s.split("</Data>").next()) {
+                    target_commandline = value.to_string();
+                }
+
+                // Add a row to the table
+                table.add_row(Row::new(vec![
+                    Cell::new(&rule_id),
+                    Cell::new(&description),
+                    Cell::new(&detection_time),
+                    Cell::new(&user),
+                    Cell::new(&path),
+                    Cell::new(&process_name),
+                    Cell::new(&target_commandline),
+                ]));
+
+                EvtClose(event);
+            }
+        }
+
+        EvtClose(h_query);
+
+        // Print the table
+        table.printstd();
+    }
+
+    Ok(())
+}
 
 
 #[derive(Deserialize, Debug)]
