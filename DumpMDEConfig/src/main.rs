@@ -294,7 +294,7 @@ fn query_protection_history() -> Result<(), Box<dyn Error>> {
         .encode_wide()
         .chain(Some(0))
         .collect();
-    let query_w: Vec<u16> = OsString::from("*[System[(EventID=1117 or EventID=1116)]]")
+    let query_w: Vec<u16> = OsString::from("*[System[(EventID=1117)]]")
         .encode_wide()
         .chain(Some(0))
         .collect();
@@ -340,7 +340,7 @@ fn query_protection_history() -> Result<(), Box<dyn Error>> {
                 if let Some(event_id_str) = message_str.split("<EventID>").nth(1).and_then(|s| s.split("</EventID>").next()) {
                     let event_id: u32 = event_id_str.parse().unwrap_or(0);
 
-                    if event_id == 1116 || event_id == 1117 {
+                    if event_id == 1117 {
                         if let Some(value) = message_str.split("<Data Name='Threat Name'>").nth(1).and_then(|s| s.split("</Data>").next()) {
                             threat_name = value.to_string();
                         }
