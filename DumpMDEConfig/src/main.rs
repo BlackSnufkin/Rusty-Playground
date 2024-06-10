@@ -28,6 +28,10 @@ fn main() {
 
     println!("[+] Exploit Guard Protection History");
     let _ = query_exploit_guard_protection_history();
+    
+    println!("[+] Windows Firewall Exclusions");
+    let _ = query_firewall_exclusions();
+
 }
 
 pub fn asr_rule_descriptions() -> HashMap<String, String> {
@@ -475,6 +479,103 @@ fn query_exploit_guard_protection_history() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+
+fn query_firewall_exclusions() -> Result<(), Box<dyn Error>> {
+    let log_name_w: Vec<u16> = OsString::from("Microsoft-Windows-Windows Firewall With Advanced Security/Firewall")
+        .encode_wide()
+        .chain(Some(0))
+        .collect();
+    let query_w: Vec<u16> = OsString::from("*[System[(EventID=2099)]]")
+        .encode_wide()
+        .chain(Some(0))
+        .collect();
+
+    unsafe {
+        let h_query = EvtQuery(ptr::null_mut(), log_name_w.as_ptr(), query_w.as_ptr(), EvtQueryChannelPath);
+        if h_query.is_null() {
+            eprintln!("Failed to query event log");
+            return Err(std::io::Error::last_os_error().into());
+        }
+
+        let mut events: [EVT_HANDLE; 10] = [ptr::null_mut(); 10];
+        let mut returned = 0;
+
+        while EvtNext(h_query, events.len() as u32, events.as_mut_ptr(), 0, 0, &mut returned) != 0 {
+            for &event in &events[..returned as usize] {
+                if event.is_null() {
+                    continue;
+                }
+
+                let mut buffer_size: u32 = 0;
+                EvtRender(ptr::null_mut(), event, EvtRenderEventXml, 0, ptr::null_mut(), &mut buffer_size, ptr::null_mut());
+                let mut buffer: Vec<u16> = vec![0; (buffer_size / 2) as usize];
+
+                if EvtRender(ptr::null_mut(), event, EvtRenderEventXml, buffer_size, buffer.as_mut_ptr() as *mut _, &mut buffer_size, ptr::null_mut()) == 0 {
+                    eprintln!("Failed to render event");
+                    EvtClose(event);
+                    continue;
+                }
+
+                let message_str = OsString::from_wide(&buffer).to_string_lossy().into_owned();
+                let mut rule_id = String::new();
+                let mut rule_name = String::new();
+                let mut application_path = String::new();
+                let mut direction = String::new();
+                let mut action = String::new();
+                let mut time_created = String::new();
+                let mut local_port = String::new();
+
+                if let Some(value) = message_str.split("<Data Name='RuleId'>").nth(1).and_then(|s| s.split("</Data>").next()) {
+                    rule_id = value.trim().to_string();
+                }
+
+                if let Some(value) = message_str.split("<Data Name='RuleName'>").nth(1).and_then(|s| s.split("</Data>").next()) {
+                    rule_name = value.trim().to_string();
+                }
+
+                if let Some(value) = message_str.split("<Data Name='ApplicationPath'>").nth(1).and_then(|s| s.split("</Data>").next()) {
+                    application_path = value.trim().to_string();
+                }
+
+                if let Some(value) = message_str.split("<Data Name='Direction'>").nth(1).and_then(|s| s.split("</Data>").next()) {
+                    direction = value.trim().to_string();
+                    if direction == "1"{
+                        direction = "inbound".to_string()
+                    }
+                }
+
+                if let Some(value) = message_str.split("<Data Name='Action'>").nth(1).and_then(|s| s.split("</Data>").next()) {
+                    action = value.trim().to_string();
+                }
+
+                if let Some(value) = message_str.split("<Data Name='LocalPorts'>").nth(1).and_then(|s| s.split("</Data>").next()) {
+                    local_port = value.trim().to_string();
+                }
+
+                if let Some(value) = message_str.split("<TimeCreated SystemTime='").nth(1).and_then(|s| s.split("'").next()) {
+                    time_created = value.trim().to_string();
+                }
+
+                if action == "3" { // Action "3" corresponds to "Allow"
+                    println!("Rule ID: {}", rule_id);
+                    println!("Rule Name: {}", rule_name);
+                    println!("Application Path: {}", application_path);
+                    println!("Direction: {}", direction);
+                    println!("Action: Allow");
+                    println!("Local Port: {}", local_port);
+                    println!("Time Created: {}", time_created);
+                    println!();
+                }
+
+                EvtClose(event);
+            }
+        }
+
+        EvtClose(h_query);
+    }
+
+    Ok(())
+}
 
 
 #[derive(Deserialize, Debug)]
