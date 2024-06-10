@@ -485,7 +485,7 @@ fn query_firewall_exclusions() -> Result<(), Box<dyn Error>> {
         .encode_wide()
         .chain(Some(0))
         .collect();
-    let query_w: Vec<u16> = OsString::from("*[System[(EventID=2099)]]")
+    let query_w: Vec<u16> = OsString::from("*[System[(EventID=2097 or EventID=2099)]]")
         .encode_wide()
         .chain(Some(0))
         .collect();
