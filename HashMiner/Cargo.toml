@@ -1,0 +1,22 @@
+[package]
+name = "HashMiner"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[profile.release]
+opt-level = "z"     # Optimize for size.
+lto = true          # Enable Link Time Optimization
+codegen-units = 1   # Reduce number of codegen units to increase optimizations.
+panic = "abort"     # Abort on panic
+strip = true        # Automatically strip symbols from the binary.
+
+[dependencies]
+winapi = { version = "0.3.9", features = ["winnt", "minwindef", "winbase", "securitybaseapi", "tlhelp32", "processthreadsapi", "errhandlingapi"] }
+winreg = "0.10.1"
+anyhow = "1.0"
+aes = "0.7.5"
+block-modes = "0.8.1"
+des = "0.0.2"
+regex = "1.5.4"
+md-5 = "0.10.1"
