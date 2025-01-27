@@ -56,16 +56,16 @@ mod lists {
         "portscan", "lateral", "pivot", "exfil", "dump", "harvest", "hooking", "hook",
         "unhook", "patch", "bypass", "hollow", "spawned", "suspended", "injected", "injection",
         "elevated", "token", "steal", "impersonate", "migrate", "persistence",
-        "encrypted", "obfuscated", "packed", "sandbox", "debug", "heartbeat", "callback",
+        "encrypted", "obfuscated", "packed", "sandbox", "heartbeat", "callback",
         "handshake", "evasion", "stealth", "hidden", "covert", "masquerade", "spoof",
-        "forge", "tunnel", "proxy", "relay", "listen", "bind", "reverse", "remote",
-        "execute", "syscall", "direct", "unmanaged", "native", "assembly",
+        "forge", "tunnel", "proxy", "relay", "listen", "bind", "reverse",
+        "execute", "syscall", "indirect", "unmanaged", "native", "assembly",
 
         "mimikatz", "PSExec", "BloodHound", "Rubeus", "SharpHound", "Empire",
         "CobaltStrike", "meterpreter","inject", "mimikatz",
         
         // Common file extensions
-        ".exe", ".dll", ".sys", ".vbs", ".ps1", ".bat", ".cmd", ".hta", ".msi",
+        ".sys", ".vbs", ".ps1", ".bat", ".cmd", ".hta", ".msi",
         ".js", ".wsf", ".scr", ".pif", ".inf", ".reg", ".tmp", ".log"
     ];
 
@@ -120,7 +120,6 @@ mod lists {
         "installutil.exe", "msbuild.exe", "appcmd.exe", "mavinject.exe"
     ];
 }
-
 /// Regex patterns
 static IP_PATTERN: Lazy<Regex> = Lazy::new(|| {
     // Strict 4-octet IPv4, to avoid OIDs like "1.3.14.3"
@@ -215,6 +214,18 @@ static ERROR_MESSAGE_PATTERN: Lazy<Regex> = Lazy::new(|| {
         [\w\s\-\.\,\/\\\(\)\[\]\{\}]+
     ").unwrap()
 });
+
+
+// Add this struct before AnalysisResults
+#[derive(Hash, Eq, PartialEq)]
+struct CaseInsensitiveString(String);
+
+impl CaseInsensitiveString {
+    fn new(s: &str) -> Self {
+        CaseInsensitiveString(s.to_lowercase())
+    }
+}
+
 
 
 #[derive(Default, Serialize)]
@@ -462,23 +473,25 @@ fn analyze_strings(file_path: String, extracted_strings: &[String]) -> AnalysisR
             continue;
         }
 
+        let lowercase_string = string.to_lowercase();
+
         // Order from most specific to most general patterns
-        if malware_strings_set.contains(string.as_str()) {
+        if malware_strings_set.iter().any(|s| lowercase_string.contains(&s.to_lowercase())) {
             results.found_suspicious_strings.push(string.clone());
             processed_strings.insert(string);
             continue;
         }
-        if suspicious_functions_set.contains(string.as_str()) {
+        if suspicious_functions_set.iter().any(|s| lowercase_string.contains(&s.to_lowercase())) {
             results.found_suspicious_functions.push(string.clone());
             processed_strings.insert(string);
             continue;
         }
-        if network_indicators_set.contains(string.as_str()) {
+        if network_indicators_set.iter().any(|s| lowercase_string.contains(&s.to_lowercase())) {
             results.found_network_indicators.push(string.clone());
             processed_strings.insert(string);
             continue;
         }
-        if file_operations_set.contains(string.as_str()) {
+        if file_operations_set.iter().any(|s| lowercase_string.contains(&s.to_lowercase())) {
             results.found_file_operations.push(string.clone());
             processed_strings.insert(string);
             continue;
@@ -486,7 +499,6 @@ fn analyze_strings(file_path: String, extracted_strings: &[String]) -> AnalysisR
 
         // Basic length limit for next checks
         if string.len() <= 200 {
-            // Use captures() to get just the URL part
             if let Some(captures) = URL_PATTERN.captures(string) {
                 if let Some(url_match) = captures.get(1) {
                     results.found_url.push(url_match.as_str().to_string());
@@ -503,24 +515,21 @@ fn analyze_strings(file_path: String, extracted_strings: &[String]) -> AnalysisR
             if DLL_PATTERN.is_match(string) {
                 results.found_dll.push(string.clone());
             }
-            // Then modify how you capture the file in analyze_strings:
             if let Some(captures) = FILE_PATTERN.captures(string) {
                 if let Some(file_match) = captures.get(1) {
                     results.found_file.push(file_match.as_str().to_string());
                 }
             }
-            // Check for function calls with "Set"/"Get"/"Rtl"/"Nt" (excluding errors)
             if FUNCTION_CALL_PATTERN.is_match(string) && 
                !ERROR_MESSAGE_PATTERN.is_match(string) {
                 results.found_functions.push(string.clone());
             }
         }
-        // Add error message check
+        
         if ERROR_MESSAGE_PATTERN.is_match(string) {
             results.found_error_messages.push(string.clone());
         }
 
-        // Email, domain, registry, encoded strings
         if EMAIL_PATTERN.is_match(string) {
             results.found_emails.push(string.clone());
         }
@@ -530,8 +539,7 @@ fn analyze_strings(file_path: String, extracted_strings: &[String]) -> AnalysisR
         if REGISTRY_PATTERN.is_match(string) {
             results.found_registry_keys.push(string.clone());
         }
-        // In analyze_strings function:
-        if !ERROR_MESSAGE_PATTERN.is_match(string) && // Check it's NOT an error message first
+        if !ERROR_MESSAGE_PATTERN.is_match(string) && 
             INTERESTING_PATTERN.is_match(string) && 
             string.len() > 20 {
             results.found_interesting_strings.push(string.clone());
